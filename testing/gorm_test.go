@@ -86,4 +86,24 @@ func TestQuerySelect(t *testing.T) {
 
 		assert.Equal(t, 4, len(sample))
 	})
+
+	// test select all using gorm.ScanRows
+	t.Run("select all data using scanRows", func(t *testing.T) {
+		rows, err := db.Raw("select id, name from sample").Rows()
+		assert.Nil(t, err)
+		assert.NotNil(t, rows)
+		if err != nil {
+			t.Fatalf(err.Error())
+		}
+
+		defer rows.Close()
+
+		var sample []entity.Sample
+		for rows.Next() {
+			err := db.ScanRows(rows, &sample)
+			assert.Nil(t, err)
+		}
+
+		assert.Equal(t, 4, len(sample))
+	})
 }
