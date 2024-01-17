@@ -493,3 +493,21 @@ func TestUpdateData(t *testing.T) {
 
 	})
 }
+
+// test insert autoIncrement
+func TestInsertAutoIncrement(t *testing.T) {
+	db := SetupDb()
+
+	t.Run("insert 10 data with auto increment", func(t *testing.T) {
+		var newData []entity.UserLog
+		for i := 1; i <= 10; i++ {
+			newData = append(newData, entity.UserLog{
+				UserId: strconv.Itoa(i),
+				Action: "created",
+			})
+		}
+
+		err := db.Create(&newData).Error
+		assert.Nil(t, err)
+	})
+}
