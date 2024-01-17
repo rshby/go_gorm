@@ -435,7 +435,7 @@ func TestModel(t *testing.T) {
 func TestUpdateData(t *testing.T) {
 	db := SetupDb()
 
-	// test update data with gorm
+	// test update data with gorm menggunakan .Save()
 	t.Run("test update data", func(t *testing.T) {
 		// get data with id=1
 		var user entity.User
@@ -449,8 +449,8 @@ func TestUpdateData(t *testing.T) {
 		assert.Nil(t, err)
 	})
 
-	// test update selected column
-	t.Run("update selected column", func(t *testing.T) {
+	// test update selected column menggunakan .Updates()
+	t.Run("update selected multi column", func(t *testing.T) {
 		/**
 		secara default .Save() akan mengupdate semua kolom
 		jika ingin hanya mengupdate kolom tertentu dapat menggunakan .Update(kolom, value)
@@ -458,6 +458,24 @@ func TestUpdateData(t *testing.T) {
 		**/
 		err := db.Model(&entity.User{}).Where("id=?", 2).Updates(map[string]any{"first_name": "Budi", "last_name": "Haryanto"}).Error
 		assert.Nil(t, err)
+	})
+
+	t.Run("updated selected multi columns with struct", func(t *testing.T) {
+		// update
+		err := db.Model(&entity.User{}).Where("id=?", "11").Updates(&entity.User{
+			ID:   "11",
+			Name: entity.Name{FirstName: "To", LastName: "Moro"},
+		}).Error
+		assert.Nil(t, err)
+
+		// get data after update
+		var user entity.User
+		err = db.Take(&user, "id=?", "11").Error
+		assert.Nil(t, err)
+
+		// encode to json
+		userJson, _ := json.Marshal(&user)
+		fmt.Println(string(userJson))
 	})
 
 	// test update satu kolom menggunakan .Update(kolom, value_baru)
