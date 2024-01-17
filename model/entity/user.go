@@ -4,12 +4,12 @@ import "time"
 
 // table users
 type User struct {
-	ID          string    `gorm:"column=id;primaryKey;<-:create'" json:"id"`
-	Password    string    `gorm:"column=password" json:"password"`
-	Name        string    `gorm:"name" json:"name"`
-	CreatedAt   time.Time `gorm:"column=created_at;autoCreateTime;<-:create" json:"created_at"`
-	UpdatedAt   time.Time `gorm:"updated_at;autoUpdateTime" json:"updated_at"`
-	Information string    `gorm:"-"`
+	ID          string    `gorm:"column=id;primaryKey;<-:create'" json:"id,omitempty"`
+	Password    string    `gorm:"column=password" json:"password,omitempty"`
+	Name        Name      `gorm:"embedded" json:"name"`
+	CreatedAt   time.Time `gorm:"column=created_at;autoCreateTime;<-:create" json:"created_at,omitempty"`
+	UpdatedAt   time.Time `gorm:"updated_at;autoUpdateTime" json:"updated_at,omitempty"`
+	Information string    `gorm:"-" json:"information,omitempty"`
 }
 
 // set table name
