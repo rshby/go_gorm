@@ -498,6 +498,7 @@ func TestUpdateData(t *testing.T) {
 func TestInsertAutoIncrement(t *testing.T) {
 	db := SetupDb()
 
+	// test insert batch dengan 10 data -> id auto_increment
 	t.Run("insert 10 data with auto increment", func(t *testing.T) {
 		var newData []entity.UserLog
 		for i := 1; i <= 10; i++ {
