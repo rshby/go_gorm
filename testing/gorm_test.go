@@ -517,7 +517,19 @@ func TestInsertAutoIncrement(t *testing.T) {
 func TestInsertTimeMilli(t *testing.T) {
 	db := SetupDb()
 
+	// insert user_logs timestamp using millisecond
 	t.Run("test insert timestamp millisecond", func(t *testing.T) {
+		var userLogs []entity.UserLog
+		for i := 1; i <= 10; i++ {
+			userLogs = append(userLogs, entity.UserLog{
+				UserId: fmt.Sprintf("user %v", i),
+				Action: "initial created",
+			})
+		}
 
+		// insert to db
+		tx := db.Create(&userLogs)
+		assert.Nil(t, tx.Error)
+		assert.Equal(t, 10, int(tx.RowsAffected))
 	})
 }
