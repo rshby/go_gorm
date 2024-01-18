@@ -512,3 +512,12 @@ func TestInsertAutoIncrement(t *testing.T) {
 		assert.Nil(t, err)
 	})
 }
+
+// test isert created_at dan update_at : millisecond
+func TestInsertTimeMilli(t *testing.T) {
+	db := SetupDb()
+
+	t.Run("test insert timestamp millisecond", func(t *testing.T) {
+
+	})
+}
