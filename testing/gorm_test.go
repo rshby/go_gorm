@@ -8,6 +8,7 @@ import (
 	"go_gorm/model/entity"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
 	"log"
 	"strconv"
@@ -533,3 +534,170 @@ func TestInsertTimeMilli(t *testing.T) {
 		assert.Equal(t, 10, int(tx.RowsAffected))
 	})
 }
+
+// test update or insert
+func TestSaveOrUpdate(t *testing.T) {
+	db := SetupDb()
+
+	// test save or update
+	t.Run("test insert or update", func(t *testing.T) {
+		userLog := entity.UserLog{
+			UserId: "1",
+			Action: "test action",
+		}
+
+		tx := db.Save(&userLog) // akan insert -> karena data ID nya tidak ada
+		assert.Nil(t, tx.Error)
+
+		userLog.UserId = "2"
+		err := db.Save(&userLog).Error // update
+		assert.Nil(t, err)
+	})
+
+	// test data non auto_increment
+	t.Run("test data non auto increment", func(t *testing.T) {
+		user := entity.User{
+			ID:       "99",
+			Password: "",
+			Name: entity.Name{
+				FirstName: "user99",
+			},
+		}
+		tx := db.Save(&user) // create
+		assert.Nil(t, tx.Error)
+		assert.Equal(t, 1, int(tx.RowsAffected))
+
+		user.Name.FirstName = "user 99 updated"
+		tx = db.Save(&user)
+		assert.Nil(t, tx.Error)
+		assert.Equal(t, 1, int(tx.RowsAffected))
+	})
+}
+
+// test onconflict
+func TestConflictCreate(t *testing.T) {
+	db := SetupDb()
+
+	// test on conflict
+	t.Run("test on conflict", func(t *testing.T) {
+		user := entity.User{
+			ID:       "88",
+			Password: "rahasia",
+			Name: entity.Name{
+				FirstName: "user 88 update",
+			},
+		}
+
+		//
+		result := db.Clauses(clause.OnConflict{
+			UpdateAll: true,
+		}).Create(&user) // create
+		assert.Nil(t, result.Error)
+	})
+}
+
+// test delete data
+func TestDeleteData(t *testing.T) {
+	db := SetupDb()
+
+	// delete tanpa select data dulu
+	t.Run("test delete tanpa select dulu", func(t *testing.T) {
+		err := db.Delete(&entity.User{}, "id=?", "99").Error
+		assert.Nil(t, err)
+
+		log.Println("success delete")
+	})
+
+	// delete dengan get data dulu
+	t.Run("test delete dengan select data dulu", func(t *testing.T) {
+		var user entity.User
+		err := db.Take(&user, "id=?", "88").Error
+		assert.Nil(t, err)
+
+		userJson, _ := json.Marshal(&user)
+		fmt.Println(string(userJson))
+
+		// delete
+		err = db.Delete(&user).Error
+		assert.Nil(t, err)
+	})
+
+	// delete dengan condition WHERE
+	t.Run("test delete dengan where", func(t *testing.T) {
+		err := db.Where("password=? AND first_name=?", "rahasia123", "Reo").Delete(&entity.User{}).Error
+		assert.Nil(t, err)
+
+		// test get data yang sudah dihapus
+		var user entity.User
+		err = db.Where("password=? AND first_name=?", "rahasia123", "Reo").Take(&user).Error
+		assert.NotNil(t, err)
+	})
+}
+
+// test soft delete
+func TestSoftDelete(t *testing.T) {
+	db := SetupDb()
+
+	// insert data todos
+	t.Run("insert data todos", func(t *testing.T) {
+		err := db.Model(&entity.Todo{}).Create(&entity.Todo{
+			UserId:      "1",
+			Title:       "data 1",
+			Description: "ini adalah data 1",
+		}).Error
+		assert.Nil(t, err)
+		log.Println("success insert data todos")
+	})
+
+	// test delete soft delete
+	t.Run("test soft delete", func(t *testing.T) {
+		err := db.Delete(&entity.Todo{ID: 1}).Error
+		assert.Nil(t, err)
+
+		log.Println("sucess delete soft delete")
+	})
+
+	// get data after soft delete
+	t.Run("get data after soft delete", func(t *testing.T) {
+		var todos []entity.Todo
+		err := db.Find(&todos).Error
+		assert.Nil(t, err)
+		assert.Equal(t, 0, len(todos))
+	})
+}
+
+// unscope -> digunakan untuk get data yang sudah disoft_delete atau ingin hard delete
+func TestUnscope(t *testing.T) {
+	db := SetupDb()
+
+	// get data yang sudah soft_delete
+	t.Run("get data yang sudah disoft_delete", func(t *testing.T) {
+		var todo entity.Todo
+		err := db.Unscoped().Take(&todo, "id=1").Error
+		assert.Nil(t, err)
+		assert.Equal(t, int64(1), todo.ID)
+		todoJson, _ := json.Marshal(&todo)
+		log.Println(string(todoJson))
+	})
+
+	// hard delete data yang sudah soft delete
+	t.Run("hard delete data yang sudah soft delete", func(t *testing.T) {
+		err := db.Unscoped().Delete(&entity.Todo{}, "id=?", 1).Error
+		assert.Nil(t, err)
+
+		// get data
+		var todos []entity.Todo
+		err = db.Model(&entity.Todo{}).Find(&todos).Error
+		assert.Nil(t, err)
+		assert.Equal(t, 0, len(todos))
+	})
+
+	/**
+	Peringatan
+	- ketika menggunakan soft delete, perhatikan penggunaan primary key atau unique index
+	- ketika data sudah dihapus secara soft delete, sebenarnya data masih ada di tabel, oleh karena itu pastikan
+	data primary key atau unique index tidak duplicate dengan data yang sudah dihapus secara soft_delete
+	*/
+}
+
+// Model struct

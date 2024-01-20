@@ -1,0 +1,4 @@
+Model struct
+- GORM menyediakan struct bernama Model yang berisi field ID, CreatedAt, UpdatedAt, dan DeletedAt
+- ini cocok digunakan ketika kita menggunakan field yang sesuai dengan conventionnya gorm
+- contoh misal kita bisa menggunakan struct model ketika membuat model Todos
