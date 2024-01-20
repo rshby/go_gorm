@@ -816,7 +816,7 @@ func TestAutoCreateUpdateRelation(t *testing.T) {
 				MiddleName: "Reo",
 				LastName:   "Sahobby",
 			},
-			Wallet: entity.Wallet{
+			Wallet: &entity.Wallet{
 				Id:      "3",
 				UserId:  "20",
 				Balance: 18000000,
@@ -838,7 +838,7 @@ func TestAutoCreateUpdateRelation(t *testing.T) {
 				FirstName: "Reo",
 				LastName:  "Sahobby",
 			},
-			Wallet: entity.Wallet{
+			Wallet: &entity.Wallet{
 				Id:      "4",
 				UserId:  "21",
 				Balance: 10000000,
@@ -863,12 +863,12 @@ func TestAutoCreateUpdateRelation(t *testing.T) {
 				MiddleName: "Buds",
 				LastName:   "Adult",
 			},
-			Wallet: entity.Wallet{
+			Wallet: &entity.Wallet{
 				Id:      "4",
 				UserId:  "22",
 				Balance: 98000000,
 			},
-			Addresses: []entity.Ad{
+			Addresses: []entity.Address{
 				{
 					UserId:  "22",
 					Address: "Tegal Baru, Gumulan, Klaten Tengah",
@@ -887,9 +887,10 @@ func TestAutoCreateUpdateRelation(t *testing.T) {
 		log.Println("success insert all to database")
 	})
 
+	// get data users and address (relation 2 table -> one to many)
 	t.Run("test get users and address", func(t *testing.T) {
 		var user []entity.User
-		err := db.Model(&entity.User{}).Joins("Ad").Where("users.id=?", "22").Find(&user).Error
+		err := db.Model(&entity.User{}).Preload("Addresses").Where("id=?", "22").Find(&user).Error
 		assert.Nil(t, err)
 
 		userJson, _ := json.Marshal(&user)
@@ -899,7 +900,7 @@ func TestAutoCreateUpdateRelation(t *testing.T) {
 	// test get data yang memiliki relasi 3 tabel
 	t.Run("get data with 3 relation tables", func(t *testing.T) {
 		var users []entity.User
-		err := db.Model(&entity.User{}).Preload("Address").Joins("Wallet").Find(&users).Error
+		err := db.Model(&entity.User{}).Preload("Addresses").Joins("Wallet").Find(&users).Error
 		assert.Nil(t, err)
 
 		usersJson, _ := json.Marshal(&users)
