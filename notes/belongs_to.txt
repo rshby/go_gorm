@@ -1,0 +1,14 @@
+Belongs To di One to Many
+- saat kita membuat relasi One to Many, ada sudut pandang lain dari Model sebelahnya. yaitu relasi Many to One
+- pada kasus ini, kita menggunakan Belongs To (Milik) di GORM
+- contoh sebelumnya kita tahu bahwa User punya banyak Address, artinya Address milik (Belongs To) User
+- kita bisa menambahkan relasi ini di Model Address, agar ketika kita melakukan query ke Model Address,
+kita juga mendapatkan informasi relasi User nya
+- cara membuatnya mirip seperti kita membuat relasi One to One
+
+Belongs To di One to One
+- selain di One to Many, Belongs To juga dapat diimplementasikan di relasi one to one
+- sebelumnya kita tahu bahwa User punya satu (Has One) Wallet, artinya Wallet itu milik (Belongs to) satu User
+- kita bisa menambahkan field User di Wallet sebagai relasi Belongs To
+- namun karena di Golang Cyclic itu tidak boleh, maka untuk menambahkan relasi Belongs To di One to One, kita
+perlu menggunakan pointer

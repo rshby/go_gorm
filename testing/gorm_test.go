@@ -906,4 +906,58 @@ func TestAutoCreateUpdateRelation(t *testing.T) {
 		usersJson, _ := json.Marshal(&users)
 		log.Println(string(usersJson))
 	})
+
+	// test get one data yang memiliki 3 relasi
+	t.Run("get one data with 3 relation tables", func(t *testing.T) {
+		var user entity.User
+		err := db.Model(&entity.User{}).Preload("Addresses").Joins("Wallet").Take(&user, "users.id=?", "22").Error
+		assert.Nil(t, err)
+
+		userJson, _ := json.Marshal(&user)
+		fmt.Println(string(userJson))
+	})
+}
+
+// test belong to
+func TestBelongsTo(t *testing.T) {
+	db := SetupDb()
+
+	// test data from belongs to using joins
+	t.Run("test get data from belongs to table using joins", func(t *testing.T) {
+		var address entity.Address
+		err := db.Model(&entity.Address{}).Joins("User").Take(&address, "addresses.user_id=?", "22").Error
+		assert.Nil(t, err)
+
+		addressJson, _ := json.Marshal(&address)
+		fmt.Println(string(addressJson))
+	})
+
+	// test get data from belongs using preload
+	t.Run("test get data from belongs to table using preload", func(t *testing.T) {
+		var address entity.Address
+		err := db.Model(&entity.Address{}).Preload("User").Take(&address, "user_id=?", "22").Error
+		assert.Nil(t, err)
+
+		addressJson, _ := json.Marshal(&address)
+		fmt.Println(string(addressJson))
+	})
+
+	// test get data from wallet -> belongs to one to one
+	t.Run("get data belongs to one to one", func(t *testing.T) {
+		var wallet entity.Wallet
+		err := db.Model(&entity.Wallet{}).Preload("User").Take(&wallet, "user_id=?", "22").Error
+		assert.Nil(t, err)
+
+		walletJson, _ := json.Marshal(&wallet)
+		fmt.Println(string(walletJson))
+	})
+
+	t.Run("get data wallet from belongs to using joins", func(t *testing.T) {
+		var wallet entity.Wallet
+		err := db.Model(&entity.Wallet{}).Joins("User").Take(&wallet, "wallets.user_id=?", "22").Error
+		assert.Nil(t, err)
+
+		walletJson, _ := json.Marshal(&wallet)
+		fmt.Println(string(walletJson))
+	})
 }

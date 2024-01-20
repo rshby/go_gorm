@@ -8,6 +8,7 @@ type Wallet struct {
 	Balance   int64     `gorm:"column:balance;not null" json:"balance,omitempty"`
 	CreatedAt time.Time `gorm:"column:created_at;not null;autoCreateTime" json:"created_at,omitempty"`
 	UpdatedAt time.Time `gorm:"column:updated_at;not null;autoCreateTime;autoUpdateTime" json:"updated_at,omitempty"`
+	User      *User     `gorm:"foreignKey:user_id;references:id" json:"user,omitempty"`
 }
 
 func (w *Wallet) TableName() string {
