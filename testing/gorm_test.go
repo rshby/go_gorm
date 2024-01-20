@@ -816,7 +816,7 @@ func TestAutoCreateUpdateRelation(t *testing.T) {
 				MiddleName: "Reo",
 				LastName:   "Sahobby",
 			},
-			Wallet: &entity.Wallet{
+			Wallet: entity.Wallet{
 				Id:      "3",
 				UserId:  "20",
 				Balance: 18000000,
@@ -838,7 +838,7 @@ func TestAutoCreateUpdateRelation(t *testing.T) {
 				FirstName: "Reo",
 				LastName:  "Sahobby",
 			},
-			Wallet: &entity.Wallet{
+			Wallet: entity.Wallet{
 				Id:      "4",
 				UserId:  "21",
 				Balance: 10000000,
@@ -850,5 +850,59 @@ func TestAutoCreateUpdateRelation(t *testing.T) {
 		assert.Nil(t, err)
 
 		log.Println("hanya insert data ke tabel users")
+	})
+
+	// insert data users sekaligus data addressesnya
+	t.Run("insert data users and address directly", func(t *testing.T) {
+		// create data
+		user := entity.User{
+			ID:       "22",
+			Password: "P@ssw0rd",
+			Name: entity.Name{
+				FirstName:  "Cotton",
+				MiddleName: "Buds",
+				LastName:   "Adult",
+			},
+			Wallet: entity.Wallet{
+				Id:      "4",
+				UserId:  "22",
+				Balance: 98000000,
+			},
+			Addresses: []entity.Address{
+				{
+					UserId:  "22",
+					Address: "Tegal Baru, Gumulan, Klaten Tengah",
+				},
+				{
+					UserId:  "22",
+					Address: "Ragunan, Pasar Minggu, Jakarta Selatan",
+				},
+			},
+		}
+
+		// insert all to database
+		err := db.Save(&user).Error
+		assert.Nil(t, err)
+
+		log.Println("success insert all to database")
+	})
+
+	t.Run("test get users and address", func(t *testing.T) {
+		var user entity.User
+		err := db.Model(&entity.User{}).Preload("Address").Take(&user, "id=22").Error
+		assert.Nil(t, err)
+
+		userJson, _ := json.Marshal(&user)
+		fmt.Println(string(userJson))
+	})
+
+	// test get data yang memiliki relasi 3 tabel
+	t.Run("get data with 3 relation tables", func(t *testing.T) {
+		var users []entity.User
+		err := db.Model(&entity.User{}).Preload("Address").Joins("Wallet").Find(&users).Error
+		assert.Nil(t, err)
+
+		usersJson, _ := json.Marshal(&users)
+		log.Println(string(usersJson))
 	})
 }
