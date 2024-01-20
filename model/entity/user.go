@@ -11,8 +11,8 @@ type User struct {
 	UpdatedAt   time.Time `gorm:"updated_at;autoUpdateTime" json:"updated_at,omitempty"`
 	Information string    `gorm:"-" json:"information,omitempty"`
 
-	Wallet    Wallet    `gorm:"foreignKey:user_id;references:id" json:"wallet,omitempty"`
-	Addresses []Address `gorm:"foreignKey:user_id;references:id" json:"addresses,omitempty"`
+	Wallet    Wallet `gorm:"foreignKey:user_id;references:id" json:"wallet,omitempty"`
+	Addresses []Ad   `gorm:"foreignKey:user_id;references:id" json:"addresses,omitempty"`
 }
 
 // set table name

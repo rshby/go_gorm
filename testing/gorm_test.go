@@ -868,7 +868,7 @@ func TestAutoCreateUpdateRelation(t *testing.T) {
 				UserId:  "22",
 				Balance: 98000000,
 			},
-			Addresses: []entity.Address{
+			Addresses: []entity.Ad{
 				{
 					UserId:  "22",
 					Address: "Tegal Baru, Gumulan, Klaten Tengah",
@@ -888,8 +888,8 @@ func TestAutoCreateUpdateRelation(t *testing.T) {
 	})
 
 	t.Run("test get users and address", func(t *testing.T) {
-		var user entity.User
-		err := db.Model(&entity.User{}).Preload("Address").Take(&user, "id=22").Error
+		var user []entity.User
+		err := db.Model(&entity.User{}).Joins("Ad").Where("users.id=?", "22").Find(&user).Error
 		assert.Nil(t, err)
 
 		userJson, _ := json.Marshal(&user)
