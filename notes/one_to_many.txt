@@ -1,0 +1,5 @@
+ONE TO MANY relation db
+- relasi one to many adalah relasi dimana data di tabel bisa memiliki relasi ke banyak data di tabel lain
+- di GORM, one to many juga disebut dengan HAS MANY
+- untuk membuat relasi one to many, kita bisa gunakan field dengan tipe data Slice Model yang berelasi
+- kita juga bisa menentukan informasi seperti foreignKey dan references nya, sama seperti ketika menggunakan one to one

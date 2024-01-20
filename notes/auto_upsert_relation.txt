@@ -1,0 +1,10 @@
+AUTO UPSERT RELATION
+- saat kita menggunakan relation, lalu kita ingin melakukan create/update data Model, secara default GORM akan mengecek
+relasi yang terdapat di data tersebut
+- jika terdapat data relasi, GORM akan melakukan proses Upsert terhadap data relasinya, sehingga kita tidak perlu melakukan
+create/update data relasi secara manual
+
+SKIP AUTO INSERT/UPDATE
+- jika kita tidak mau melakukan auto create/update data relasi, kita bisa gunakan method Omit()
+yang berisi clause.Associations
+- ini memberitahu GORM bahwa kita tidak mau melakukan auto create/update untuk data relasinya

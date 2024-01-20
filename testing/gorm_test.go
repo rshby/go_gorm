@@ -701,3 +701,154 @@ func TestUnscope(t *testing.T) {
 }
 
 // Model struct
+func TestTodoLogs(t *testing.T) {
+	db := SetupDb()
+
+	// insert to table todo_logs
+	t.Run("insert table todo_logs", func(t *testing.T) {
+		err := db.Create(&entity.TodoLog{
+			UserId:      "User 1",
+			Title:       "Todo Log 1",
+			Description: "created user 1",
+		}).Error
+		assert.Nil(t, err)
+
+		// get data by id 1
+		var todoLog entity.TodoLog
+		err = db.Model(&entity.TodoLog{}).Take(&todoLog, "id=?", 1).Error
+		assert.Nil(t, err)
+		assert.Equal(t, uint(1), todoLog.Model.ID)
+
+		// encode to json
+		todoLogJson, _ := json.Marshal(&todoLog)
+		log.Println(string(todoLogJson))
+	})
+}
+
+// test locking database
+func TestLockingDatabase(t *testing.T) {
+	db := SetupDb()
+
+	t.Run("test locking for update", func(t *testing.T) {
+		err := db.Transaction(func(tx *gorm.DB) error {
+			// get data and lock for update
+			var todoLog entity.TodoLog
+			err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&todoLog, "id=1").Error
+			if err != nil {
+				return err
+			}
+
+			// update data
+			todoJson, _ := json.Marshal(&todoLog)
+			log.Println(string(todoJson))
+
+			todoLog.Title = "Todo Log User 1"
+			err = tx.Updates(&todoLog).Error
+			return err
+		})
+
+		assert.Nil(t, err)
+	})
+}
+
+// test insert table wallet
+func TestInsertWallet(t *testing.T) {
+	db := SetupDb()
+
+	t.Run("insert wallet", func(t *testing.T) {
+		err := db.Model(&entity.Wallet{}).Create(&entity.Wallet{
+			Id:      "2",
+			UserId:  "2",
+			Balance: 1000000,
+		}).Error
+		assert.Nil(t, err)
+
+		// get data after update
+		var wallet entity.Wallet
+		err = db.Take(&wallet, "user_id=?", "2").Error
+		assert.Nil(t, err)
+
+		walletJson, _ := json.Marshal(&wallet)
+		log.Println(string(walletJson))
+	})
+}
+
+// func test query join relation table
+func TestQueryRelationTable(t *testing.T) {
+	db := SetupDb()
+
+	// get data from table users and wallets
+	t.Run("get data menggunakan preload", func(t *testing.T) {
+		var user entity.User
+		err := db.Model(&entity.User{}).Preload("Wallet").Take(&user, "id=?", "2").Error
+		assert.Nil(t, err)
+
+		userJson, _ := json.Marshal(&user)
+		log.Println(string(userJson))
+
+		assert.Equal(t, "2", user.ID)
+		assert.Equal(t, "2", user.Wallet.Id)
+	})
+
+	// get data menggunakan joins
+	t.Run("get data menggunakan join", func(t *testing.T) {
+		var user entity.User
+		err := db.Model(&entity.User{}).Joins("Wallet").Take(&user, "users.id=2").Error
+		assert.Nil(t, err)
+
+		userJson, _ := json.Marshal(&user)
+		log.Println(string(userJson))
+	})
+}
+
+// auto upsert relation
+func TestAutoCreateUpdateRelation(t *testing.T) {
+	db := SetupDb()
+
+	// test auto insert 2 tables (yang mempunyai relasi)
+	t.Run("auto create update relation", func(t *testing.T) {
+		// create data that will be inserted to database
+		user := entity.User{
+			ID:       "20",
+			Password: "rahasia",
+			Name: entity.Name{
+				FirstName:  "Muhammad",
+				MiddleName: "Reo",
+				LastName:   "Sahobby",
+			},
+			Wallet: &entity.Wallet{
+				Id:      "3",
+				UserId:  "20",
+				Balance: 18000000,
+			},
+		}
+
+		// insert to database tabel users and wallets
+		err := db.Create(&user).Error
+		assert.Nil(t, err)
+	})
+
+	// test skip auto create/update -> tidak menggunakan auto create/auto update
+	t.Run("skip auto create update relation", func(t *testing.T) {
+		// create data that will be inserted/updated
+		user := entity.User{
+			ID:       "21",
+			Password: "rahasia",
+			Name: entity.Name{
+				FirstName: "Reo",
+				LastName:  "Sahobby",
+			},
+			Wallet: &entity.Wallet{
+				Id:      "4",
+				UserId:  "21",
+				Balance: 10000000,
+			},
+		}
+
+		// insert to database only table users
+		err := db.Omit(clause.Associations).Create(&user).Error
+		assert.Nil(t, err)
+
+		log.Println("hanya insert data ke tabel users")
+	})
+}

@@ -10,6 +10,9 @@ type User struct {
 	CreatedAt   time.Time `gorm:"column=created_at;autoCreateTime;<-:create" json:"created_at,omitempty"`
 	UpdatedAt   time.Time `gorm:"updated_at;autoUpdateTime" json:"updated_at,omitempty"`
 	Information string    `gorm:"-" json:"information,omitempty"`
+
+	Wallet    *Wallet   `gorm:"foreignKey:UserId;references:ID"`
+	Addresses []Address `gorm:"foreignKey:UserId;references:ID"`
 }
 
 // set table name

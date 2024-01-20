@@ -1,0 +1,5 @@
+LOCK
+- hal yang biasa kita lakukan saat menggunakan database adalah Lock data
+- biasanya, ini digunakan agar tidak terjadi RACE CONDITION ketika memanipulasi data yang sama oleh beberapa request
+- Untuk melakukan Lock menggunakan GORM, kita bisa menambah Clauses()Locking
+- kita bisa menentukan jenis Lock nya, apakah itu UPDATE, SHARE, atau yang lainnya. sesuai dengan dukungan database yang kita gunakan

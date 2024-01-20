@@ -1,0 +1,11 @@
+Preload
+- secara default, relasi tidak akan diquery oleh GORM, artinya sifatnya LAZY
+- jika ingin melakukan query relation (EAGER) secara langsung ketika melakukan query Model, kita bisa sebutkan
+relasi yang ingin kita load menggunakan method Preload()
+
+JOIN
+- Menggunakan Preload(), GORM akan melakukan pengambilan data pada tabel relation menggunakan query yang terpisah
+- hal ini cocok ketika menggunakan relasi One to Many atau Many to Many
+- Namun, pada kasus One to One, kadang ada baiknya kita lakukan sekali query saja menggunakan JOIN, karena hasilnya hanya
+satu data, jadi lebih cepat
+- jika kita ingin menggunakan JOIN, kita bisa menggunakan method Joins(), lalu menyebutkan field mana yang akan kita JOIN
