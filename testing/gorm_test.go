@@ -961,3 +961,24 @@ func TestBelongsTo(t *testing.T) {
 		fmt.Println(string(walletJson))
 	})
 }
+
+// test insert many to many
+func TestManyTomany(t *testing.T) {
+	db := SetupDb()
+
+	t.Run("test insert manytomany", func(t *testing.T) {
+		// insert to product
+		err := db.Model(&entity.Product{}).Omit(clause.Associations).Create(&entity.Product{
+			ID:    "P001",
+			Name:  "iPhone 15 Pro Max 512GB",
+			Price: 30000000,
+		}).Error
+		assert.Nil(t, err)
+
+		err = db.Table("user_like_product").Create(map[string]string{
+			"user_id":    "",
+			"product_id": "",
+		}).Error
+		assert.Nil(t, err)
+	})
+}

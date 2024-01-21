@@ -1,0 +1,29 @@
+Many to Many
+- relasi yang paling kompleks adalah many to many
+- seperti yang kita tahu, bahwa untuk relasi many to many, kita harus membuat tabel jembatan penghubung
+antara dua tabel
+- GORM juga mendukung relasi many to many, caranya mudah kita hanya perlu membuat field berupa slice di kedua
+model yang berelasi
+- untuk memberi tahu tabel penghubung dan juga kolom untuk join nya, kita bisa menggunakan tag
+
+Many to Many tag
+- untuk memberi tahu nama tabel penghubung, kita bisa menggunakan tag `gorm:"many2many:nama_tabel"`
+- saat melakukan query many to many, terdapat banyak sekali kolom yang perlu diketahui, seperti kolom id di model
+pertama, kolom foreign key model pertama di tabel penghubung, kolom id di model kedua, kolom foreign key model
+kedua di tabel penghubung. semua bisa kita gunakan tag
+- `gorm:"foreignKey:kolom_id"` untuk id di model pertama
+- `gorm:"joinForeignKey:kolom_id"` untuk foreign key Model pertama di tabel penghubung
+- `gorm:"references:kolom_id"` untuk id di Model kedua
+- `gorm:"referencesForeignKey:kolom_id"` untuk foreign key Model kedua di tabel penghubung
+
+Contoh kasus
+- misal kita akan membuat fitur dimana user bisa like banyak product, dan satu product banyak dilike oleh banyak user
+- artinya kita akan membuat model product, lalu membuat relasi many to many antara user dan product
+
+Create/Update/Delete relasi Many to Many
+- salah satu tantangan relasi many to many adalah, bagaimana cara melakukan create/update/delete?
+- hal ini karena tabel penhubung tidak ada di model entity
+- untungnya di GORM bisa digunakan untuk memanipulasi data, tanpa harus menggunakan model
+- kita bisa gunakan method Table() pada form.DB untuk menybeutkan tabel mana yang mau kita pilih
+- walaupun cara ini bisa dilakukan, namun sebenarnya cara yang lebih baik adalah menggunakan fitur bernama Association
+Mode yang akan dibahas pada materi selanjutnya
