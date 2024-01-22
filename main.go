@@ -8,14 +8,16 @@ import (
 )
 
 func main() {
-	config, err := config.LoadConfig()
+	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Println(err.Error())
 		log.Fatal()
 	}
 
+	appConfig := config.ConvertToObject(cfg)
+
 	// test config
-	fmt.Println(config.GetString("app.name"))
+	log.Println(appConfig.Database.Name)
 
 	// connect to database
 	db := connection.ConnectToDB()

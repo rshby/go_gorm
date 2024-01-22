@@ -13,6 +13,7 @@ import (
 	"log"
 	"strconv"
 	"testing"
+	"time"
 )
 
 func SetupDb() *gorm.DB {
@@ -968,17 +969,38 @@ func TestManyTomany(t *testing.T) {
 
 	t.Run("test insert manytomany", func(t *testing.T) {
 		// insert to product
-		err := db.Model(&entity.Product{}).Omit(clause.Associations).Create(&entity.Product{
-			ID:    "P001",
-			Name:  "iPhone 15 Pro Max 512GB",
-			Price: 30000000,
+		err := db.Model(&entity.Product{}).Omit(clause.Associations).Where("id='P001'").Save(&entity.Product{
+			ID:        "P001",
+			Name:      "iPhone 15 Pro Max 512GB",
+			Price:     30000000,
+			CreatedAt: time.Now(),
 		}).Error
 		assert.Nil(t, err)
 
-		err = db.Table("user_like_product").Create(map[string]string{
-			"user_id":    "",
-			"product_id": "",
+		err = db.Table("user_like_product").Create(map[string]any{
+			"user_id":    "1",
+			"product_id": "P001",
 		}).Error
 		assert.Nil(t, err)
+	})
+
+	// test get data from many to many
+	t.Run("test get data many to many", func(t *testing.T) {
+		var product entity.Product
+		err := db.Model(&entity.Product{}).Preload("LikeByUsers").First(&product, "id=?", "P001").Error
+		assert.Nil(t, err)
+
+		productJson, _ := json.Marshal(&product)
+		fmt.Println(string(productJson))
+	})
+
+	// test get data many2many from user
+	t.Run("get data many to many from user", func(t *testing.T) {
+		var user entity.User
+		err := db.Model(&entity.User{}).Preload("LikeProducts").First(&user, "id=?", "1").Error
+		assert.Nil(t, err)
+
+		userJson, _ := json.Marshal(&user)
+		fmt.Println(string(userJson))
 	})
 }
