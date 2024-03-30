@@ -12,3 +12,8 @@ CREATE TABLE users (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 )ENGINE = InnoDB;
+
+-- add firstname middlename lastname in table users
+ALTER TABLE users RENAME COLUMN name TO first_name;
+ALTER TABLE users ADD COLUMN middle_name VARCHAR(255) NULL AFTER first_name;
+ALTER TABLE users ADD COLUMN last_name VARCHAR(255) NULL AFTER middle_name;

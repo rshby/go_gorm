@@ -2,12 +2,15 @@ package testing_v2
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"go_gorm/config"
 	"go_gorm/infrastructure/database/connection"
+	"go_gorm/model/entity"
 	mck "go_gorm/testing/mock/config"
 	"gorm.io/gorm"
 	"log"
+	"strconv"
 	"testing"
 )
 
@@ -179,4 +182,84 @@ func TestQueryRows(t *testing.T) {
 
 		assert.Equal(t, 4, len(samples))
 	})
+}
+
+// TestCreateUser adalah function untuk insert new data user
+// menggunakan db.Create()
+func TestCreateUser(t *testing.T) {
+	configMock := mck.NewConfigMock()
+	configMock.Mock.On("GetConfig").Return(&cfg)
+	db := connection.ConnectToDB(configMock)
+
+	scenario := []struct {
+		Name        string
+		Input       entity.User
+		ExpectError bool
+	}{
+		{
+			Name: "test create user id 1",
+			Input: entity.User{
+				ID:       "1",
+				Password: "rahasia",
+				Name: entity.Name{
+					FirstName:  "Eko",
+					MiddleName: "Kurniawan",
+					LastName:   "Khannedy",
+				},
+				Information: "ini akan diignore",
+			},
+			ExpectError: false,
+		},
+	}
+
+	for _, testCase := range scenario {
+		t.Run(testCase.Name, func(t *testing.T) {
+			result := db.Create(&testCase.Input)
+			assert.Equal(t, 1, int(result.RowsAffected))
+			assert.Equal(t, result.Error != nil, testCase.ExpectError)
+		})
+	}
+}
+
+// TestBatchInsert adalah function untuk insert banyak rows sekaligus
+// apabila Create() hanya akan melakukan insert satu data saja
+// untuk bisa insert banyak data, tetap meggunakan Create() tapi parameternya slice []entity.struct
+func TestBatchInsert(t *testing.T) {
+	configMock := mck.NewConfigMock()
+	configMock.Mock.On("GetConfig").Return(&cfg)
+	db := connection.ConnectToDB(configMock)
+
+	// create data
+	var users []entity.User
+	for i := 0; i < 10; i++ {
+		users = append(users, entity.User{
+			ID:       strconv.Itoa(i + 2),
+			Password: "rahasia",
+			Name: entity.Name{
+				FirstName: fmt.Sprintf("user ke %v", i+2),
+			},
+			Information: "ini akan diignore",
+		})
+	}
+
+	// create scenario testing
+	scenario := []struct {
+		Name       string
+		Input      []entity.User
+		ExpecError bool
+	}{
+		{
+			Name:       "test insert batch succes",
+			Input:      users,
+			ExpecError: false,
+		},
+	}
+
+	for _, testCase := range scenario {
+		t.Run(testCase.Name, func(t *testing.T) {
+			result := db.Create(&testCase.Input)
+			assert.Equal(t, len(users), int(result.RowsAffected))
+			assert.Equal(t, result.Error != nil, testCase.ExpecError)
+		})
+	}
 }
