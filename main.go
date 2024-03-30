@@ -14,12 +14,7 @@ func main() {
 		log.Fatal()
 	}
 
-	appConfig := config.ConvertToObject(cfg)
-
-	// test config
-	log.Println(appConfig.Database.Name)
-
 	// connect to database
-	db := connection.ConnectToDB()
+	db := connection.ConnectToDB(cfg)
 	fmt.Println(db)
 }

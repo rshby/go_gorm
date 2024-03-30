@@ -11,14 +11,14 @@ import (
 )
 
 // function connection menggunakan gorm
-func ConnectToDB() *gorm.DB {
-	config, _ := config.LoadConfig()
+func ConnectToDB(config config.IConfig) *gorm.DB {
+	config = config.GetConfig()
 
-	user := config.GetString("database.user")
-	password := config.GetString("database.password")
-	host := config.GetString("database.host")
-	port := config.GetInt("database.port")
-	dbName := config.GetString("database.name")
+	user := config.GetConfig().Database.User
+	password := config.GetConfig().Database.Password
+	host := config.GetConfig().Database.Host
+	port := config.GetConfig().Database.Port
+	dbName := config.GetConfig().Database.Name
 
 	dsn := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?charset=utf8mb4&parseTime=True&loc=Local",
 		user, password, host, port, dbName)
@@ -42,6 +42,7 @@ func ConnectToDB() *gorm.DB {
 	sqlDb.SetConnMaxLifetime(1 * time.Hour)
 	sqlDb.SetConnMaxIdleTime(40 * time.Minute)
 
+	log.Println("success connection to database")
 	// success
 	return db
 }

@@ -21,7 +21,7 @@ type Database struct {
 	Name     string `json:"name,omitempty"`
 }
 
-func LoadConfig() (*viper.Viper, error) {
+func LoadConfig() (IConfig, error) {
 	config := viper.New()
 	config.SetConfigType("json")
 	config.SetConfigFile("config.json")
@@ -31,7 +31,7 @@ func LoadConfig() (*viper.Viper, error) {
 	}
 
 	// success get config
-	return config, nil
+	return ConvertToObject(config), nil
 }
 
 func ConvertToObject(config *viper.Viper) *Config {
@@ -49,4 +49,8 @@ func ConvertToObject(config *viper.Viper) *Config {
 			Name:     config.GetString("database.name"),
 		},
 	}
+}
+
+func (c *Config) GetConfig() *Config {
+	return c
 }
