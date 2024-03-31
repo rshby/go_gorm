@@ -263,3 +263,227 @@ func TestBatchInsert(t *testing.T) {
 		})
 	}
 }
+
+// TestTransactionGorm adalah function untuk menggunakan transaction sql
+func TestTransactionGorm(t *testing.T) {
+	configMock := mck.NewConfigMock()
+	configMock.Mock.On("GetConfig").Return(&cfg)
+	db := connection.ConnectToDB(configMock)
+
+	// function transaction
+	// menggunakan db.Begin(), kemudian menggunakan tx.Commit() atau tx.Rollback()
+	// harus ditulis Commit() dan Rollback() secara manual
+	// test transaction success -> commit
+	t.Run("test transaction menggunakan begin rollback", func(t *testing.T) {
+		// create transaction
+		tx := db.Begin()
+		defer tx.Rollback()
+
+		// create user
+		err := tx.Create(&entity.User{
+			ID:       "12",
+			Password: "rahasia",
+			Name: entity.Name{
+				FirstName: "user ke 12",
+			},
+			Information: "",
+		}).Error
+		assert.Nil(t, err)
+
+		if err != nil {
+			return
+		}
+
+		// commit transaction
+		tx.Commit()
+	})
+
+	// function transaction
+	// menggunakan method db.Transaction(), menuliskan code di dalam function callbacknya
+	// test transaction gagal -> rollback
+	t.Run("test transaction menggunakan db.Transaction callback", func(t *testing.T) {
+		err := db.Transaction(func(tx *gorm.DB) error {
+			user := entity.User{
+				ID:       "13",
+				Password: "rahasia",
+				Name: entity.Name{
+					FirstName: "user ke 13",
+				},
+				Information: "ini akan diignore",
+			}
+
+			err := tx.Create(&user).Error
+			assert.Nil(t, err)
+			if err != nil {
+				return err
+			}
+
+			err = tx.Create(&user).Error
+			assert.NotNil(t, err)
+			assert.Error(t, err)
+			if err != nil {
+				return err
+			}
+
+			// will automaticly commit
+			return nil
+		})
+
+		assert.NotNil(t, err)
+		assert.Error(t, err)
+	})
+}
+
+// TestQueryGormSingleRow untuk query data yang hasilnya satu data saja
+// dapat menggunakan menthod db.First(), db.Take(), db.Last()
+func TestQueryGormSingleRow(t *testing.T) {
+	configMock := mck.NewConfigMock()
+	configMock.Mock.On("GetConfig").Return(&cfg)
+	db := connection.ConnectToDB(configMock)
+
+	// db.First() digunakan untuk query single data yang diurutkan dari id paling kecil
+	t.Run("test query single object using First method", func(t *testing.T) {
+		var user entity.User
+		err := db.First(&user).Error
+		assert.Nil(t, err)
+		assert.Equal(t, user.ID, "1")
+
+		userJson, _ := json.Marshal(&user)
+		log.Println(string(userJson))
+	})
+
+	// db.First() dengan WHERE filter -> WHERE id='5'
+	t.Run("test query single object using First method with WHERE filter", func(t *testing.T) {
+		var user entity.User
+		err := db.First(&user, "id = ?", "5").Error
+		assert.Nil(t, err)
+		assert.Equal(t, "5", user.ID)
+
+		userJson, _ := json.Marshal(&user)
+		log.Println(string(userJson))
+	})
+
+	// db.Take() digunakan untuk query single data yang datanya tidak diurutkan
+	t.Run("test query single object using Take method", func(t *testing.T) {
+		var user entity.User
+		err := db.Take(&user).Error
+		assert.Nil(t, err)
+
+		userJson, _ := json.Marshal(&user)
+		log.Println(string(userJson))
+	})
+
+	// db.Take() dengan WHERE filter -> WHERE id='5'
+	t.Run("test query single object using Take method with WHERE filter", func(t *testing.T) {
+		var user entity.User
+		err := db.Take(&user, "id = ?", "5").Error
+		assert.Nil(t, err)
+		assert.Equal(t, "5", user.ID)
+
+		userJson, _ := json.Marshal(&user)
+		log.Println(string(userJson))
+	})
+
+	// db.Last() digunakan untuk query single data yang datanya diurutkan dari id terakhir
+	t.Run("test query single object using Last method", func(t *testing.T) {
+		var user entity.User
+		err := db.Last(&user).Error
+		assert.Nil(t, err)
+		assert.Equal(t, "9", user.ID)
+
+		userJson, _ := json.Marshal(&user)
+		log.Println(string(userJson))
+	})
+}
+
+// TestQueryGormAllRows untuk query data yang hasilnya banyak data / lebih dari satu data
+// dapat menggunakan method db.Find()
+// dapat juga ditambahkan query WHERE dengan condition
+func TestQueryGormAllRows(t *testing.T) {
+	configMock := mck.NewConfigMock()
+	configMock.Mock.On("GetConfig").Return(&cfg)
+	db := connection.ConnectToDB(configMock)
+
+	// query all rows using method db.Find()
+	t.Run("test query all rows using method Find", func(t *testing.T) {
+		var users []entity.User
+		err := db.Find(&users).Error
+		assert.Nil(t, err)
+
+		usersJson, _ := json.Marshal(&users)
+		log.Println(string(usersJson))
+	})
+
+	// db.Find() dengan WHERE filter -> WHERE id IN ('5', '6')
+	t.Run("test query all rows using method Find dengan WHERE filter", func(t *testing.T) {
+		var users []entity.User
+		result := db.Find(&users, "id IN (?)", []string{"5", "6"})
+		assert.Nil(t, result.Error)
+		assert.Equal(t, 2, len(users))
+
+		usersJson, _ := json.Marshal(&users)
+		log.Println(string(usersJson))
+	})
+}
+
+// gorm advance query
+// TestQueryGormWhere adalah function untuk query menggunakan WHERE method
+// method db.Where() akan dipanggil sebelum memanggil method Take(), atau Find()
+func TestQueryGormWhereCondition(t *testing.T) {
+	configMock := mck.NewConfigMock()
+	configMock.Mock.On("GetConfig").Return(&cfg)
+	db := connection.ConnectToDB(configMock)
+
+	// test WHERE dua kondisi menggunakan 2 kali pemanggilan method WHERE -> akan dianggap AND
+	t.Run("test query WHERE with find, multi WHERE", func(t *testing.T) {
+		users := []entity.User{}
+		err := db.Where("first_name LIKE ?", "user%").Where("password = ?", "rahasia").Find(&users).Error
+		assert.Nil(t, err)
+
+		usersJson, _ := json.Marshal(&users)
+		log.Println(string(usersJson))
+	})
+
+	// test WHERE dua kondisi menggunakan 1 kali pemanggilan method WHERE -> langsung ditulis AND manual
+	t.Run("test query WHERE with Find, single WHERE", func(t *testing.T) {
+		users := []entity.User{}
+		err := db.Where("first_name like ? AND password = ?", "user%", "rahasia").Find(&users).Error
+		assert.Nil(t, err)
+
+		usersJson, _ := json.Marshal(&users)
+		log.Println(string(usersJson))
+	})
+
+	// OR Operator
+	// test WHERE dengan kondisi kedua OR menggunakan pemanggilan method db.Where() dilanjutkan pemanggilan method Or()
+	// maka gabungan dari dua method Where() dan Or() adalah query -> WHERE ... OR ...
+	t.Run("test query WHERE dengan kondisi OR menggunakan method db.Where().OR()", func(t *testing.T) {
+		var users = []entity.User{}
+
+		firstName := "user ke 10"
+		middleName := "Kurniawan"
+		err := db.Where("first_name = ?", firstName).Or("middle_name = ?", middleName).Find(&users).Error
+		assert.Nil(t, err)
+		assert.Equal(t, 2, len(users))
+
+		usersJson, _ := json.Marshal(&users)
+		log.Println(string(usersJson))
+	})
+
+	// test WHERE dengan kondisi OR menggunakan 1 kali pemanggilan method db.Where() saja
+	// kondisi OR dituliskan langsung di dalam parameter method Where()
+	t.Run("test query WHERE dengan kondisi OR menggunakan method db.Where() saja", func(t *testing.T) {
+		var users []entity.User
+
+		firstName := "user ke 10"
+		middleName := "Kurniawan"
+		err := db.Where("first_name = ? OR middle_name = ?", firstName, middleName).Find(&users).Error
+		assert.Nil(t, err)
+		assert.Equal(t, 2, len(users))
+
+		for _, user := range users {
+			userJson, _ := json.Marshal(&user)
+			log.Println(string(userJson))
+		}
+	})
+}
