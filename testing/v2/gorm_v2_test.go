@@ -486,4 +486,128 @@ func TestQueryGormWhereCondition(t *testing.T) {
 			log.Println(string(userJson))
 		}
 	})
+
+	// NOT operator
+	// test query WHERE NOT menggunakan method db.Not() saja
+	// bisa juga ditambahkan method WHERE apabila memerlukan filter WHERE ... AND .. NOT ...
+	t.Run("test query WHERE NOT dengan method db.Not() saja", func(t *testing.T) {
+		var users []entity.User
+		err := db.Not("middle_name = ?", "").Find(&users).Error
+		assert.Nil(t, err)
+		assert.Equal(t, 1, len(users))
+
+		usersJson, _ := json.Marshal(&users)
+		log.Println(string(usersJson))
+	})
+
+	// test query WHERE NOT menggunakan kombinasi method db.Where() dan method Not()
+	t.Run("test query WHERE NOT menggunakan method Were() dan Not()", func(t *testing.T) {
+		var users []entity.User
+		password := "rahasia"
+		firstName := "user%"
+		err := db.Where("password = ?", password).Not("first_name like ?", firstName).Find(&users).Error
+		assert.Nil(t, err)
+		assert.Equal(t, 1, len(users))
+
+		usersJson, _ := json.Marshal(&users)
+		log.Println(string(usersJson))
+	})
+
+	t.Run("test query WHERE NOT hanya menggunakan method db.Where() saja", func(t *testing.T) {
+		var user entity.User
+		result := db.Where("password = ? AND first_name NOT LIKE ?", "rahasia", "user%").Take(&user)
+		assert.Nil(t, result.Error)
+
+		userJson, _ := json.Marshal(&user)
+		log.Println(string(userJson))
+	})
+}
+
+// SELECT condition
+// TestQueryGormSelect adalah function UT yang berisi query SELECT
+// method db.Select() digunakan untuk memilih kolom apa saja yang ingin ditampilkan
+func TestQueryGormSelect(t *testing.T) {
+	configMock := mck.NewConfigMock()
+	configMock.Mock.On("GetConfig").Return(&cfg)
+	db := connection.ConnectToDB(configMock)
+
+	t.Run("test query SELECT menggunakan method db.Select()", func(t *testing.T) {
+		var user entity.User
+		err := db.Select("id, first_name").Not("middle_name = ?", "").Take(&user).Error
+		assert.Nil(t, err)
+		assert.NotEqual(t, "", user.Name.FirstName)
+
+		userJson, _ := json.Marshal(&user)
+		log.Println(string(userJson))
+	})
+}
+
+// TestQueryGormWhereStructConditon adalah function UT yang berisi query WHERE menggunakan struct
+// jadi kondisi WHERE filter bisa beda-beda sesuai dengan struct yang diisi
+// ini cocok digunakan untuk kondisi dinamis, sehingga kolom yang dicari bisa beda-beda sesuai structnya
+func TestQueryGormWhereStructConditon(t *testing.T) {
+	configMock := mck.NewConfigMock()
+	configMock.Mock.On("GetConfig").Return(&cfg)
+	db := connection.ConnectToDB(configMock)
+
+	// test query WHERE menggunakan method db.Where()
+	// memasukkan filter tipe data struct ke dalam parameter method db.Where() nya
+	t.Run("test query WHERE menggunakan struct", func(t *testing.T) {
+		// create filter menggunakan struct
+		// nanti querynya akan menjadi -> SELECT * FROM users WHERE password = 'rahasia' AND first_name = 'user ke 5'
+		filter := entity.User{
+			Password: "rahasia",
+			Name:     entity.Name{FirstName: "user ke 5"},
+		}
+
+		var user entity.User
+		err := db.Where(filter).Take(&user).Error
+		assert.Nil(t, err)
+		assert.Equal(t, "5", user.ID)
+
+		userJson, _ := json.Marshal(&user)
+		log.Println(string(userJson))
+	})
+}
+
+// TestQueryGormWhereMapCondition adalah function UT yang berisi query WHERE menggunakan map
+// jadi kondisi WHERE filter bisa beda-beda sesuai dengan map yang ditulis
+// ini cocok digunakan untuk kondisi dinamis, sehingga kolom yang dicari bisa beda-beda sesuai dengan mapnya
+func TestQueryGormWhereMapCondition(t *testing.T) {
+	configMock := mck.NewConfigMock()
+	configMock.Mock.On("GetConfig").Return(&cfg)
+	db := connection.ConnectToDB(configMock)
+
+	// create filter WHERE
+	// nanti querynya menjadi -> SELECT * FROM users WHERE password = 'rahasia' AND last_name = ''
+	filter := map[string]any{
+		"password":  "rahasia",
+		"last_name": "",
+	}
+
+	var users []entity.User
+	err := db.Where(filter).Find(&users).Error
+	assert.Nil(t, err)
+
+	// print response
+	usersJson, _ := json.Marshal(&users)
+	log.Println(string(usersJson))
+}
+
+// TestQueryGormLimitOffset adalah function UT yang berisi query LIMIT dan OFFSET
+// method db.Order() digunakan untuk menambah query ORDER
+// method db.Offset() digunakan untuk menambah query OFFSET
+// method db.Limit() digunakan untuk menambah query LIMIT
+func TestQueryGormOrderLimitOffset(t *testing.T) {
+	configMock := mck.NewConfigMock()
+	configMock.Mock.On("GetConfig").Return(&cfg)
+	db := connection.ConnectToDB(configMock)
+
+	var users []entity.User
+	err := db.Where("first_name LIKE ?", "user%").Order("id asc").Offset(2).Limit(2).Find(&users).Error
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(users))
+
+	usersJson, _ := json.Marshal(&users)
+	log.Println(string(usersJson))
 }
